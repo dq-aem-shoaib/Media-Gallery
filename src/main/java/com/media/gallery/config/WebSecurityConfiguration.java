@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -47,9 +48,21 @@ public class WebSecurityConfiguration {
                                 .anyRequest().authenticated())
                 .exceptionHandling(eh -> eh
                         .authenticationEntryPoint(
-                                (req, res, ex) ->
-                                        res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
-                )
+                                (req, res, ex) -> {
+                                    res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                                    res.setContentType(MediaType.APPLICATION_JSON_VALUE);
+
+                                    String body = """
+                                            {
+                                              "status": 401,
+                                              "error": "Unauthorized",
+                                              "message": "%s",
+                                              "path": "%s"
+                                            }
+                                            """.formatted(ex.getMessage(), req.getRequestURI());
+                                    res.getWriter().write(body);
+                                }
+                        ))
                 .authenticationProvider(authenticationProvider()) // CUSTOM AUTH PROVIDER
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return httpSecurity.build();
