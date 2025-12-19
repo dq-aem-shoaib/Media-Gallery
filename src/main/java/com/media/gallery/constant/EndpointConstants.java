@@ -8,6 +8,7 @@ public class EndpointConstants {
 
     // Authentication Related endpoints
     public static final String LOGIN_API = WEB_API_V1_PREFIX + "/login";
+    public static final String REFRESH_TOKEN_API = WEB_API_V1_PREFIX + "/refreshtoken";
 
     // User related endpoints
     public static final String USER_API_PREFIX = WEB_API_V1_PREFIX + "/user";

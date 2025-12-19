@@ -42,7 +42,8 @@ public class WebSecurityConfiguration {
                         sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(request ->
                         request
-                                .requestMatchers("web/api/v1/login").permitAll()
+                                .requestMatchers("/web/api/v1/login",
+                                        "/web/api/v1/refreshtoken").permitAll()
                                 .anyRequest().authenticated())
                 .exceptionHandling(eh -> eh
                         .authenticationEntryPoint(

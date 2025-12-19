@@ -2,7 +2,11 @@ package com.media.gallery.service;
 
 import com.media.gallery.dto.LoginRequestDTO;
 import com.media.gallery.dto.LoginResponseDTO;
+import com.media.gallery.dto.RefreshTokenRequestDTO;
+import com.media.gallery.dto.RefreshTokenResponseDTO;
+import com.media.gallery.entity.RefreshTokenEntity;
 import com.media.gallery.entity.UserInfo;
+import com.media.gallery.repository.RefreshTokenRepository;
 import com.media.gallery.repository.UserInfoRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +17,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -26,6 +32,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     JwtTokenGeneratorService jwtTokenGeneratorService;
+
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
 
     @Override
     @Transactional
@@ -52,16 +61,70 @@ public class AuthServiceImpl implements AuthService {
                 List.of(roleName)
         );
 
-//        LocalDateTime expiryDate = refreshToken.getExpiryDate();
+        RefreshTokenEntity refreshToken = createRefreshToken(userInfo);
+        LocalDateTime expiryDate = refreshToken.getExpiryDate();
         userInfo.setFirstLogin(false);
 
         return LoginResponseDTO.builder()
                 .accessToken(token)
                 .roleName(roleName)
-                .refreshExpiresAt(LocalDateTime.now())
+                .refreshExpiresAt(expiryDate)
                 .tokenType("Bearer")
-                .refreshToken("refreshToken.getToken()")
+                .refreshToken(refreshToken.getToken())
                 .firstLogin(firstLogin)
                 .build();
     }
+
+    @Override
+    @Transactional
+    public RefreshTokenResponseDTO processRefreshTokenRequest(RefreshTokenRequestDTO requestDTO) {
+
+        RefreshTokenEntity existingTokenEntity =
+                refreshTokenRepository.findByTokenAndIsActiveTrue(requestDTO.getRefreshToken())
+                        .orElseThrow(() ->
+                                new BadCredentialsException("Invalid refresh token"));
+
+        if (existingTokenEntity.getExpiryDate().isBefore(LocalDateTime.now())) {
+            existingTokenEntity.setIsActive(false);
+            throw new BadCredentialsException("Refresh token expired");
+        }
+
+        UserInfo userInfo = existingTokenEntity.getUser();
+
+        // 🔐 Rotate refresh token (single-use)
+        existingTokenEntity.setIsActive(false);
+
+        // Generate new access token
+        String accessToken = jwtTokenGeneratorService.generateToken(userInfo.getEmail(), List.of(userInfo.getRole()));
+
+        // Generate new refresh token
+        RefreshTokenEntity newRefreshToken = createRefreshToken(userInfo);
+
+        return RefreshTokenResponseDTO.builder()
+                .accessToken(accessToken)
+                .refreshToken(newRefreshToken.getToken())
+                .refreshExpiresAt(
+                        newRefreshToken.getExpiryDate()
+                                .atZone(ZoneId.systemDefault())
+                                .toInstant()
+                )
+                .build();
+    }
+
+    @Transactional
+    private RefreshTokenEntity createRefreshToken(UserInfo user) {
+
+        // Optional: logout from all other sessions
+        refreshTokenRepository.deactivateAllTokensForUser(user);
+
+        RefreshTokenEntity token = RefreshTokenEntity.builder()
+                .user(user)
+                .token(UUID.randomUUID().toString())
+                .expiryDate(LocalDateTime.now().plusDays(7))
+                .isActive(true)
+                .build();
+
+        return refreshTokenRepository.save(token);
+    }
+
 }
