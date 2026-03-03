@@ -1,9 +1,10 @@
-package com.media.gallery.service;
+package com.media.gallery.service.Impl;
 
 import com.media.gallery.dto.UserInfoDTO;
 import com.media.gallery.entity.UserInfo;
 import com.media.gallery.model.UserInfoModel;
 import com.media.gallery.repository.UserInfoRepository;
+import com.media.gallery.service.UserInfoService;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;

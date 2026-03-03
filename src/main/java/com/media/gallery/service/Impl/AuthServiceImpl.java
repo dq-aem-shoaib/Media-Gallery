@@ -1,4 +1,4 @@
-package com.media.gallery.service;
+package com.media.gallery.service.Impl;
 
 import com.media.gallery.dto.LoginRequestDTO;
 import com.media.gallery.dto.LoginResponseDTO;
@@ -8,6 +8,8 @@ import com.media.gallery.entity.RefreshTokenEntity;
 import com.media.gallery.entity.UserInfo;
 import com.media.gallery.repository.RefreshTokenRepository;
 import com.media.gallery.repository.UserInfoRepository;
+import com.media.gallery.service.AuthService;
+import com.media.gallery.service.JwtTokenGeneratorService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
