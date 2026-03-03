@@ -16,6 +16,7 @@ class MediaGallaeyApplicationTests {
 	void contextLoads() {
 		log.info("Test cases executing...");
 		assertEquals(true,true);
+		log.info("Test completed....");
 	}
 
 }
