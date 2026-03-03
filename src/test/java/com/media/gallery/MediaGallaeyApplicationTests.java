@@ -13,7 +13,7 @@ class MediaGallaeyApplicationTests {
 	public static Logger log = LoggerFactory.getLogger(MediaGallaeyApplicationTests.class);
 
 	@Test
-	void contextLoads() {
+	 contextLoads() {
 		log.info("Test cases executing...");
 		assertEquals(true,true);
 		log.info("Test completed....");
